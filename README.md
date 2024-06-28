@@ -1,346 +1,79 @@
-## **📃핵심 기술**
+### 
 
+# 2DRandom Tower Defense
+
+
+---
+
+## Description
+
+---
+
+
+- 🔊프로젝트 소개
+
+  2DRandom Tower Defense는 랜덤하게 생성되는 타워를 강화해 적을 막아내는 2D 타워디펜스 게임입니다. 타워의 설치, 제거, 이동 등 타일맵과의 상호작용을 구현하는대 중점을 두었습니다.
+
+       
+
+- 개발 기간 : 2024.01.05 - 2024.01.15
+
+- 🛠️사용 기술
+
+   -언어 : C#
+
+   -엔진 : Unity Engine
+
+   -데이터베이스 : 로컬
+
+   -개발 환경: Windows 10, Unity 2021.3.10f1
+
+
+
+- 💻구동 화면
+
+![스크린샷(4)](https://github.com/oyb1412/2DRandomTowerDefense/assets/154235801/0c751e94-53f7-4025-8fbb-8875192c01fb)
+
+## 목차
+
+---
+
+- 기획 의도
+- 핵심 로직
+
+
+### 기획 의도
+
+---
+
+- 타일맵과의 상호작용이 가능한 타워디펜스 게임 제작
+
+
+
+### 핵심 로직
+
+---
+![Line_1_(1)](https://github.com/oyb1412/TinyDefense/assets/154235801/f664c47e-d52b-4980-95ec-9859dea11aab)
 ### ・타일맵과의 상호작용
 
-🤔**WHY?**
+타일맵과의 상호작용을 구현해 타일맵 선택, 타워 설치등의 로직을 구현.
 
-타일맵 위에 직접 타워를 배치해야 하기 때문에, 타일맵과의 각종 상호작용 로직의 필요성을 느꼈기 때문
+![1](https://github.com/oyb1412/2DRandomTowerDefense/assets/154235801/4df72aec-f3a0-4655-b3a4-cffb518993fd)
+![Line_1_(1)](https://github.com/oyb1412/TinyDefense/assets/154235801/f664c47e-d52b-4980-95ec-9859dea11aab)
 
-🤔**HOW?**
 
- 관련 코드
+### ・Navmesh를 이용하지 않은 적 유닛의 이동 로직
 
-- MouseManager
-    
-    ```csharp
-    using UnityEngine;
-    using UnityEngine.Tilemaps;
-    
-    public class MouseManager : MonoBehaviour
-    {
-    	public Collider2D MouseRayCast(string tag)
-    	{
-        Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero,0f);
-        if (hit.collider != null && hit.collider.CompareTag(tag))
-        {
-            return hit.collider;
-        }
-        else
-            return null;
-    	}
-    }
-    ```
-    
+최적화를 위해 NavmeshAgent를 이용하지 않고 이동 로직 구현
 
-🤓**Result!**
-
-선택한 타일맵 객체의 정보를 받아올 수 있게 되어 타워 생성, 제거, 이동 등의 로직의 구현이 보다 원할해짐
-
-### ・적 유닛의 자동적인 이동
-
-🤔**WHY?**
-
-NavmeshAgent를 이용한 이동이 아닌, 더욱더 최적화가 가능한 이동로직의 필요성을 느꼈기 때문
-
-🤔**HOW?**
-
- 관련 코드
-
-- EnemyMovement
-    
-    ```csharp
-    using System.Collections;
-    using UnityEngine;
-    
-    public class EnemyMovement : MonoBehaviour
-    {
-    
-        public Transform[] wayPoints;
-        public int currentWayPoint;
-        public float speed;
-        public Vector2 nextDir;
-       
-    
-        void Movement()
-        {
-            if (!isLive || !Manager.Instance.isLive)
-                return;
-    
-            if(currentWayPoint < wayPoints.Length)
-            {
-                if(Vector2.Distance(transform.position, wayPoints[currentWayPoint].position) > 0.05f )
-                {
-                    nextDir = wayPoints[currentWayPoint].position - transform.position;
-                    nextDir = nextDir.normalized;
-    
-                    transform.Translate(nextDir * speed * Time.deltaTime);
-    
-                }
-                else
-                {
-                    currentWayPoint++;
-                }
-            }
-    
-            if(Vector2.Distance(transform.position, wayPoints[10].position) < 0.05f)
-            {
-                Manager.Instance.SetHeart(-1);
-                gameObject.SetActive(false);
-            }
-        }
-       
-    }
-    ```
-    
-
-🤓**Result!**
-
-NevmeshAgent를 사용하지 않고 적의 이동경로를 지정해 그 경로를 따라 이동하도는 로직을 구현해, 최적화 성공
+![2](https://github.com/oyb1412/2DRandomTowerDefense/assets/154235801/a639d64f-11be-4fed-83fd-02e07a452273)
+![Line_1_(1)](https://github.com/oyb1412/TinyDefense/assets/154235801/f664c47e-d52b-4980-95ec-9859dea11aab)
 
 ### ・타워 랜덤생성, 판매, 합성, 위치변경
 
-🤔**WHY?**
-
 랜덤 타워디펜스의 핵심적인 로직인 타워 랜덤생성과 합성, 타워의 위치변경의 구현
-
-🤔**HOW?**
-
- 관련 코드
-
-- CreateManager(생성)
-    
-    ```csharp
-    using UnityEngine;
-    using static TowerManager;
-    using UnityEngine.UI;
-    public class CreateManager : MonoBehaviour
-    {
-      public void CreateTower()
-      {
-          if (Manager.Instance.GetGold() >= 15)
-          {
-              createPanel.SetActive(false);
-              createPanel.transform.position = new Vector3(20f, 20f, 0f);
-              targetCell.useSell = true;
-              TowerManager trans = FactoryManager.Instance.CreateTower(towerPrefabs[StateUpgradeRandom()], new Vector3(targetCell.transform.position.x, targetCell.transform.position.y, -2f));
-              targetTower = trans;
-              targetTower.currentTowerLevel = 0;
-              targetTower.CreateLevelEffect();
-              targetTower.CreateEffect();
-              AudioManager.instance.PlayerSfx(AudioManager.Sfx.Create);
-    
-              if (TowerManager.stateUpgrade1)
-              {
-                  if(targetTower.towerType == Tower.BowTower || targetTower.towerType == Tower.MasterBowTower
-                      || targetTower.towerType == Tower.SuperTower)
-                  {
-                      targetTower.towerDamager *= 1.5f;
-                      targetTower.towerRange *= 1.5f;
-                      targetTower.towerAttackSpeed -= 0.1f;
-                  }
-              }
-              if (TowerManager.stateUpgrade2)
-              {
-                  if (targetTower.towerType == Tower.SwordTower || targetTower.towerType == Tower.MasterSwordTower)
-                  {
-                      targetTower.towerDamager *= 1.5f;
-                      targetTower.towerRange *= 1.5f;
-                      targetTower.towerAttackSpeed -= 0.1f;
-                  }
-              }
-              if (TowerManager.stateUpgrade3)
-              {
-                  if (targetTower.towerType == Tower.AxeTower || targetTower.towerType == Tower.MasterAxeTower)
-                  {
-                      targetTower.towerDamager *= 1.5f;
-                      targetTower.towerRange *= 1.5f;
-                      targetTower.towerAttackSpeed -= 0.1f;
-                  }
-              }
-              if (TowerManager.stateUpgrade4)
-              {
-                  if (targetTower.towerType == Tower.FireTower || targetTower.towerType == Tower.MasterFireTower
-                      || targetTower.towerType == Tower.SlowTower || targetTower.towerType == Tower.MasterSlowTower
-                      || targetTower.towerType == Tower.StunTower || targetTower.towerType == Tower.MasterStunTower
-                      || targetTower.towerType == Tower.SuperTower)
-                  {
-                      targetTower.towerDamager *= 1.5f;
-                      targetTower.towerRange *= 1.5f;
-                      targetTower.towerAttackSpeed -= 0.1f;
-                  }
-              }
-              if (TowerManager.stateUpgrade5)
-              {
-                  targetTower.towerPierce += 1;
-              }
-              if (TowerManager.stateUpgrade6)
-              {
-                  targetTower.towerProjectile = 1;
-              }
-                  Manager.Instance.SetGold(-15);
-          }
-      }
-    }
-    ```
-    
-- CreateManager(판매)
-    
-    ```csharp
-    using UnityEngine;
-    using static TowerManager;
-    using UnityEngine.UI;
-    public class CreateManager : MonoBehaviour
-    {
-     void DeleteTower()
-     {
-         if (Input.GetKeyDown(KeyCode.Alpha2))
-         {
-             if (MouseManager.instance.MouseRayCast("Tower"))
-             {
-                 targetTower = MouseManager.instance.MouseRayCast("Tower").GetComponent<TowerManager>();
-                 if (targetTower)
-                 {
-                     DeleteTrigger = true;
-                     deletePanel.SetActive(true);
-                     deleteText.text = "+" + (targetTower.currentTowerLevel+1) * 5 + "g";
-                     deletePanel.transform.position = new Vector2(targetTower.transform.position.x, targetTower.transform.position.y + 1f);
-                 }
-             }
-         }
-    
-         if (DeleteTrigger)
-         {
-             DeleteTimer += Time.deltaTime;
-             if(Input.GetMouseButtonDown(1))
-             {
-                 DeleteTimer = 0;
-                 DeleteTrigger = false;
-                 deletePanel.SetActive(false);
-             }
-         }
-         if (DeleteTrigger && Input.GetKeyDown(KeyCode.Alpha2) && DeleteTimer > 0.2f)
-         {
-             DeleteTimer = 0;
-             DeleteTrigger = false;
-             deletePanel.SetActive(false);
-             Manager.Instance.SetGold((targetTower.currentTowerLevel+1) * 5);
-             targets = Physics2D.CircleCastAll(targetTower.transform.position, scanRange, Vector2.zero, 0f, layer);
-             target = MouseManager.instance.GetNearTarget(targets);
-             var obj = target.GetComponent<CellManager>();
-             obj.useSell = false;
-             targetTower.DeleteEffect();
-             targetTower.gameObject.SetActive(false);
-         }
-     }
-    }
-    ```
-    
-- CreateManager(합성)
-    
-    ```csharp
-    using UnityEngine;
-    using static TowerManager;
-    using UnityEngine.UI;
-    public class CreateManager : MonoBehaviour
-    {
-        void SelectTower()
-        {
-            if (Input.GetMouseButtonDown(0) && click == 0 && targetTowers.Length > 0 ||
-                Input.GetKeyDown(KeyCode.Alpha3) && click == 0 && targetTowers.Length > 0)
-            {
-                if (MouseManager.instance.MouseRayCast("Tower") && targetTower.maxTowerLevel > 0)
-                {
-                    targetTowers[0] = MouseManager.instance.MouseRayCast("Tower").GetComponent<TowerManager>();
-                    if (targetTowers[0].canLevelUp && targetTowers[0].currentTowerLevel < targetTowers[0].maxTowerLevel)
-                    {
-                        targetTowers[0].CreateLevelUPArrow();
-                        click++;
-                    }
-                }
-            }
-            if (Input.GetMouseButtonDown(0) && click == 1 ||
-                Input.GetKeyDown(KeyCode.Alpha3) && click == 1)
-            {
-                if (MouseManager.instance.MouseRayCast("Tower"))
-                {
-                    if (targetTowers[0] != MouseManager.instance.MouseRayCast("Tower").GetComponent<TowerManager>())
-                    {
-                        targetTowers[1] = MouseManager.instance.MouseRayCast("Tower").GetComponent<TowerManager>();
-    
-                        if (targetTowers[0].canLevelUp && targetTowers[1].canLevelUp && (targetTowers[0].currentTowerLevel == targetTowers[1].currentTowerLevel) &&
-                            targetTowers[0].towerType == targetTowers[1].towerType && targetTowers[1].currentTowerLevel < targetTowers[1].maxTowerLevel)
-                        {
-                            targetTowers[0].TowerLevelUp();
-                            targetTowers[1].gameObject.SetActive(false);
-                            targets = Physics2D.CircleCastAll(targetTowers[1].transform.position, scanRange, Vector2.zero, 0f, layer);
-                            target = MouseManager.instance.GetNearTarget(targets);
-                            var obj = target.GetComponent<CellManager>();
-                            AudioManager.instance.PlayerSfx(AudioManager.Sfx.Upgrade);
-    
-                            obj.useSell = false;
-                            click = 0;
-                        }
-                    }
-                }
-            }
-            if(Input.GetMouseButtonDown(1) && click == 1)
-            {
-                targetTowers[0].DeleteLevelUPArrow();
-                click = 0;
-            }
-        }
-    }
-    ```
-    
-- CreateManager(위치이동)
-    
-    ```csharp
-    using UnityEngine;
-    using static TowerManager;
-    using UnityEngine.UI;
-    public class CreateManager : MonoBehaviour
-    {
-     void MoveTower()
-     {
-         if (Input.GetKeyDown(KeyCode.Alpha4) && MouseManager.instance.MouseRayCast("Tower") && !towerMoveTrigger
-             && towerMoveTimer == 0)
-         {
-             towerMoveTrigger = true;
-             targetTower = MouseManager.instance.MouseRayCast("Tower").GetComponent<TowerManager>();
-             var cell = Physics2D.CircleCast(targetTower.transform.position, scanRange, Vector2.zero, 0f, layer);
-             cell.transform.GetComponent<CellManager>().useSell = false;
-         }
-         if (towerMoveTrigger)
-         {
-             towerMoveTimer++;
-             targetTower.transform.position = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x,
-                 Input.mousePosition.y, 1f));
-             targetTower.animator.SetTrigger("Stun");
-             targetTower.isLive = false;
-             //플레이어 공격 불가
-    
-             var targetCell = Physics2D.CircleCast(targetTower.transform.position, scanRange, Vector2.zero, 0f, layer).
-                 transform.GetComponent<CellManager>();
-    
-             if (Input.GetKeyDown(KeyCode.Alpha4) && towerMoveTimer > 1.5f && !targetCell.useSell)
-             {
-                 //다시한번 키를 누르면 레이캐스트 서클로 가장 가까운 cell정보를 가져옴.
-                 var cell = Physics2D.CircleCast(targetTower.transform.position, scanRange, Vector2.zero, 0f, layer);
-                 cell.transform.GetComponent<CellManager>().useSell = true;
-                 targetTower.transform.position = new Vector3(cell.transform.position.x, cell.transform.position.y, -2f);
-                 towerMoveTimer = 0;
-                 towerMoveTrigger = false;
-                 targetTower.isLive = true;
-    
-             }
-             //타워의 위치를 새로운 위치로 고정
-         }
-     }
-    }
-    ```
-    
-
-🤓**Result!**
-
-6종의 타워중 랜덤한 타워를 확률에 맞게 생성, 선택한 타워를 판매, 동일 종류,레벨의 타워를 합성, 타워의 위치 재변경 등 타워디펜스에 필요한 로직을 구현해, 게임성 상승
+![11](https://github.com/oyb1412/2DRandomTowerDefense/assets/154235801/5c73f54c-7bbe-4d65-8fc3-efcc08f56c47)
+![12](https://github.com/oyb1412/2DRandomTowerDefense/assets/154235801/6e9585f5-b678-4721-b95e-2f09d4287c61)
+![15](https://github.com/oyb1412/2DRandomTowerDefense/assets/154235801/bae07b17-273d-47f8-a2ca-bc1eec3f4aa7)
+![그림8](https://github.com/oyb1412/2DRandomTowerDefense/assets/154235801/3ac49119-61ea-4615-9c8d-6a1050f6df46)
+![Line_1_(1)](https://github.com/oyb1412/TinyDefense/assets/154235801/f664c47e-d52b-4980-95ec-9859dea11aab)
